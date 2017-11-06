@@ -1,0 +1,38 @@
+#!/bin/python3
+
+"""pcmd - portable executor of arbitrary command(s)
+
+Usage:
+    pcmd master (start|stop) [--verbose]
+    pcmd slave (start|stop) [--verbose]
+    pcmd -h | --help
+    pcmd --version
+
+Options:
+    --verbose   More detailed logs.
+
+    -h --help   Show this screen.
+    --version   Show version.
+"""
+
+import docopt
+
+import master.main
+import slave.main
+
+from common.const import app
+
+def main(cliArgs):
+    if cliArgs['master']:
+        return master.main(cliArgs)
+    elif cliArgs['slave']:
+        return slave.main(cliArgs)
+    else:
+        raise Exception("Not Implemented")
+
+if __name__ == '__main__':
+    cliArgs = docopt.docopt(
+        __doc__,
+        version='{} {}'.format(app['NAME'],app['VERSION'])
+    )
+    quit(main(cliArgs))
