@@ -49,4 +49,4 @@ if __name__ == '__main__':
         __doc__,
         version='{} {}'.format(app['NAME'],app['VERSION'])
     )
-    exit(main(cliArgs))
+    sys.exit(main(cliArgs))
