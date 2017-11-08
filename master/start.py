@@ -3,50 +3,45 @@
 """pcmd-master-start
 
 Usage:
-    start.py
+    start.py [--attach] [--verbose]
     start.py -h | --help
     start.py --version
+
+Options:
+    --verbose   More detailed logs.
+
+    -h --help   Show this screen.
+    --version   Show version.
 """
 
 import sys, os
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
+if os.path.basename(sys.path[0]) is not 'pcmd':
+    sys.path.insert(0, os.path.join(sys.path[0], '..'))
 
 import docopt
-import socket
-import threading
+from multiprocessing import Process
 
-from common.const import app, server
+from common.const import app
 
-import master.main
-import master.stop
+import master.master
 
-def clientHandler(clientSocket):
-    request = clientSocket.recv(4096)
-    print('Received {}'.format(request))
-
-    msg = 'HELLO CLIENT!'
-    clientSocket.sendall(msg.encode('utf-8'))
-    clientSocket.close()
-
-def main(cliArgs):
-    serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    serverSocket.bind((server['HOST'],server['PORT']))
-    serverSocket.listen(5)
-
-    while True:
-        (clientSocket, address) = serverSocket.accept()
-
-        clientThread = threading.Thread(
-            target=clientHandler,
-            args=(clientSocket,)
+def main(masterObj):
+    if masterObj.cliArgs['--attach']:
+        masterObj.logger.info("Running server in attached mode")
+        return masterObj.masterLoop()
+    else:
+        p = Process(
+            target=masterObj.masterLoop,
         )
-        clientThread.start()
+        p.start()
 
-    return master.stop.main(cliArgs)
+        os._exit(0)
 
 if __name__ == '__main__':
     cliArgs = docopt.docopt(
         __doc__,
-        version='{} {}'.format(app['NAME'],app['VERSION'])
+        version='pcmd-master-start {}'.format(app['VERSION'])
     )
-    sys.exit(main(cliArgs))
+
+    masterObj = master.master.Master(cliArgs)
+    sys.exit(main(masterObj))

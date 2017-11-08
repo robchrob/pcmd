@@ -3,7 +3,8 @@
 """pcmd - portable executor of arbitrary command(s)
 
 Usage:
-    pcmd master (start|stop) [--verbose]
+    pcmd master start [--attach] [--verbose]
+    pcmd master stop [--verbose]
     pcmd slave (start|stop) [--verbose]
     pcmd -h | --help
     pcmd --version
@@ -17,15 +18,17 @@ Options:
 
 import docopt
 import sys
+import logging
 
-import master.main
-import slave.main
+import master
+import slave
 
 from common.const import app
 
 def main(cliArgs):
     if cliArgs['master']:
-        return master.main(cliArgs)
+        masterObj = master.master.Master(cliArgs)
+        return master.main(masterObj)
     elif cliArgs['slave']:
         return slave.main(cliArgs)
     else:
@@ -34,6 +37,26 @@ def main(cliArgs):
 if __name__ == '__main__':
     cliArgs = docopt.docopt(
         __doc__,
-        version='{} {}'.format(app['NAME'],app['VERSION'])
+        version='pcmd {}'.format(app['VERSION'])
     )
+
+    logger = logging.getLogger('pcmd')
+    formatter = logging.Formatter(
+        "[%(filename)s:%(lineno)s - %(funcName)s()] - %(levelname)s - %(message)s"
+    )
+
+    if cliArgs['--verbose']:
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(logging.INFO)
+
+    fh = logging.FileHandler('pcmd.log')
+    fh.setLevel(logging.DEBUG)
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
+
+    sh = logging.StreamHandler()
+    sh.setFormatter(formatter)
+    logger.addHandler(sh)
+
     sys.exit(main(cliArgs))

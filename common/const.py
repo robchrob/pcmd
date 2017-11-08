@@ -1,9 +1,12 @@
 app = dict(
-    NAME = "pcmd",
     VERSION = "0.1",
 )
 
-server = dict(
-    HOST = "localhost",
+mainServer = dict(
     PORT = 1337,
+)
+
+localServer = dict(
+    HOST = "localhost",
+    PORT = 1338,
 )
