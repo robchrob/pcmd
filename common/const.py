@@ -3,10 +3,6 @@ app = dict(
 )
 
 mainServer = dict(
+    HOST = "",
     PORT = 1337,
-)
-
-localServer = dict(
-    HOST = "localhost",
-    PORT = 1338,
 )

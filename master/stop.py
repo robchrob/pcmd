@@ -21,14 +21,14 @@ if os.path.basename(sys.path[0]) is not 'pcmd':
 import docopt
 import socket
 
-from common.const import app, localServer
+from common.const import app
 
 import master.master
 
 def main(masterObj):
     if not masterObj.pidF.isRunning():
         masterObj.logger.error(
-            "pcmd master is not currently running"
+            'pcmd master is not currently running'
         )
         return 1
     else:
@@ -37,12 +37,20 @@ def main(masterObj):
     localSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     try:
-        localSocket.connect(("localhost",port))
+        localSocket.connect(('',port))
         localSocket.sendall(bytes('stop', 'utf-8'))
+        response = localSocket.recv(4096)
     finally:
         localSocket.close()
 
-    return 0
+    if response == b'ok':
+        masterObj.pidF.remove()
+        return 0
+    else:
+        masterObj.logger.error(
+            'stopping the master failed - err (%s)', response
+        )
+        return 1
 
 if __name__ == '__main__':
     cliArgs = docopt.docopt(

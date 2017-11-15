@@ -73,6 +73,12 @@ class PidFile:
 
         return True
 
+    def remove(self):
+        os.remove(self.pidFilePath)
+        self.logger.debug(
+            "pidFile %s removed", self.pidFilePath
+        )
+
     def read(self):
         with open(self.pidFilePath, 'r') as pidFileFD:
             content = pidFileFD.readline().split(":")
