@@ -8,6 +8,7 @@ Usage:
         start
             [-a | --attach]
             [-v | --verbose]
+    pcmd master
         stop
             [-v | --verbose]
     pcmd slave (start|stop) [--verbose]
@@ -21,16 +22,15 @@ Options:
     --version   Show version
 """
 
-import docopt
 import sys
 
-import master.master
-import master.main
-
-import slave
+import docopt
 
 import common.logger
-from common.const import app
+
+import master.main
+import master.master
+import slave
 
 
 def main(cli_args):
@@ -46,8 +46,8 @@ def main(cli_args):
 if __name__ == '__main__':
     cliArgs = docopt.docopt(
         __doc__,
-        version='pcmd {}'.format(app['VERSION'])
+        version='pcmd {}'.format(common.const.app['VERSION'])
     )
-    logger = common.logger.get_logger('pcmd', cliArgs)
+    logger = common.logger.get_logger('pcmd', cliArgs['--verbose'])
 
     sys.exit(main(cliArgs))

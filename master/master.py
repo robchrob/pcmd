@@ -94,7 +94,7 @@ def get_settings(cli_args):
     elif cli_args['stop']:
         settings['operation'] = 'stop'
 
-    if cli_args['-a'] or cli_args['--attach']:
+    if cli_args['--attach']:
         settings['attach'] = True
     else:
         settings['attach'] = False

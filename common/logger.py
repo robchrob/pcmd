@@ -1,13 +1,13 @@
 import logging
 
 
-def get_logger(name, cli_args):
+def get_logger(name, verbose):
     logger = logging.getLogger(name)
     formatter = logging.Formatter(
         "[%(filename)s:%(lineno)s %(funcName)s()] - %(levelname)s - %(message)s"
     )
 
-    if cli_args['-v'] or cli_args['--verbose']:
+    if verbose:
         logger.setLevel(logging.DEBUG)
     else:
         logger.setLevel(logging.INFO)
