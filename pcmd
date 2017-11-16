@@ -3,60 +3,51 @@
 """pcmd - portable executor of arbitrary command(s)
 
 Usage:
-    pcmd master start [--attach] [--verbose]
-    pcmd master stop [--verbose]
-    pcmd slave (start|stop) [--verbose]
     pcmd -h | --help
+    pcmd master
+        start
+            [-a | --attach]
+            [-v | --verbose]
+        stop
+            [-v | --verbose]
+    pcmd slave (start|stop) [--verbose]
     pcmd --version
 
 Options:
-    --verbose   More detailed logs.
+    -a, --attach    Attach server start to the console
+    -v, --verbose   More detailed logs
 
-    -h --help   Show this screen.
-    --version   Show version.
+    -h --help   Show this screen
+    --version   Show version
 """
 
 import docopt
 import sys
-import logging
 
-import master
+import master.master
+import master.main
+
 import slave
 
+import common.logger
 from common.const import app
 
-def main(cliArgs):
-    if cliArgs['master']:
-        masterObj = master.master.Master(cliArgs)
-        return master.main(masterObj)
-    elif cliArgs['slave']:
-        return slave.main(cliArgs)
+
+def main(cli_args):
+    if cli_args['master']:
+        master_root = master.master.Master(cli_args)
+        return master.main.main(master_root)
+    elif cli_args['slave']:
+        return slave.main(cli_args)
     else:
         raise Exception("Not Implemented")
+
 
 if __name__ == '__main__':
     cliArgs = docopt.docopt(
         __doc__,
         version='pcmd {}'.format(app['VERSION'])
     )
-
-    logger = logging.getLogger('pcmd')
-    formatter = logging.Formatter(
-        "[%(filename)s:%(lineno)s - %(funcName)s()] - %(levelname)s - %(message)s"
-    )
-
-    if cliArgs['--verbose']:
-        logger.setLevel(logging.DEBUG)
-    else:
-        logger.setLevel(logging.INFO)
-
-    fh = logging.FileHandler('pcmd.log')
-    fh.setLevel(logging.DEBUG)
-    fh.setFormatter(formatter)
-    logger.addHandler(fh)
-
-    sh = logging.StreamHandler()
-    sh.setFormatter(formatter)
-    logger.addHandler(sh)
+    logger = common.logger.get_logger('pcmd', cliArgs)
 
     sys.exit(main(cliArgs))

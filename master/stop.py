@@ -1,62 +1,29 @@
-#!/bin/python3
-
-"""pcmd-master-stop
-
-Usage:
-    stop.py [--verbose]
-    stop.py -h | --help
-    stop.py --version
-
-Options:
-    --verbose   More detailed logs.
-
-    -h --help   Show this screen.
-    --version   Show version.
-"""
-
-import sys, os
-if os.path.basename(sys.path[0]) is not 'pcmd':
-    sys.path.insert(0, os.path.join(sys.path[0], '..'))
-
-import docopt
 import socket
 
-from common.const import app
 
-import master.master
-
-def main(masterObj):
-    if not masterObj.pidF.isRunning():
-        masterObj.logger.error(
+def main(master_root):
+    if not master_root.pidFile.running():
+        master_root.logger.error(
             'pcmd master is not currently running'
         )
         return 1
     else:
-        (pid, port) = masterObj.pidF.read()
+        (pid, port) = master_root.pidFile.read()
 
-    localSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    local_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     try:
-        localSocket.connect(('',port))
-        localSocket.sendall(bytes('stop', 'utf-8'))
-        response = localSocket.recv(4096)
+        local_socket.connect(('127.0.0.1', port))
+        local_socket.sendall(bytes('stop', 'utf-8'))
+        response = local_socket.recv(4096)
     finally:
-        localSocket.close()
+        local_socket.close()
 
     if response == b'ok':
-        masterObj.pidF.remove()
+        master_root.pidFile.remove()
         return 0
     else:
-        masterObj.logger.error(
+        master_root.logger.error(
             'stopping the master failed - err (%s)', response
         )
         return 1
-
-if __name__ == '__main__':
-    cliArgs = docopt.docopt(
-        __doc__,
-        version='pcmd-master-stop {}'.format(app['VERSION'])
-    )
-
-    masterObj = master.master.Master(cliArgs)
-    sys.exit(main(masterObj))

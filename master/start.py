@@ -1,47 +1,15 @@
-#!/bin/python3
+import os
+import multiprocessing
 
-"""pcmd-master-start
 
-Usage:
-    start.py [--attach] [--verbose]
-    start.py -h | --help
-    start.py --version
-
-Options:
-    --verbose   More detailed logs.
-
-    -h --help   Show this screen.
-    --version   Show version.
-"""
-
-import sys, os
-if os.path.basename(sys.path[0]) is not 'pcmd':
-    sys.path.insert(0, os.path.join(sys.path[0], '..'))
-
-import docopt
-from multiprocessing import Process
-
-from common.const import app
-
-import master.master
-
-def main(masterObj):
-    if masterObj.cliArgs['--attach']:
-        masterObj.logger.info("Running server in attached mode")
-        return masterObj.masterLoop()
+def main(master_root):
+    if master_root.settings['attach']:
+        master_root.logger.info("server in attached mode")
+        return master_root.loop()
     else:
-        p = Process(
-            target=masterObj.masterLoop,
+        p = multiprocessing.Process(
+            target=master_root.loop,
         )
         p.start()
 
         os._exit(0)
-
-if __name__ == '__main__':
-    cliArgs = docopt.docopt(
-        __doc__,
-        version='pcmd-master-start {}'.format(app['VERSION'])
-    )
-
-    masterObj = master.master.Master(cliArgs)
-    sys.exit(main(masterObj))

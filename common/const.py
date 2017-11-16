@@ -1,8 +1,8 @@
 app = dict(
-    VERSION = "0.1",
+    VERSION="0.1",
 )
 
 mainServer = dict(
-    HOST = "",
-    PORT = 1337,
+    HOST="",
+    PORT=1337,
 )

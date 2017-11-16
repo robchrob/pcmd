@@ -1,102 +1,102 @@
-import socket
-import os
-import threading
 import logging
-from multiprocessing import Process
 
 from common.const import mainServer
+from common.pidfile import ServiceType, PidFile
 import common.server
+import common.util
 
 import master.stop
 
-from common.pidfile import ServiceType, PidFile
 
 class Master:
-    def __init__(self, cliArgs):
+    def __init__(self, cli_args):
         self.logger = logging.getLogger('pcmd.master.Master')
+        self.settings = get_settings(cli_args)
 
-        self.cliArgs = cliArgs
-
-        self.pidF = PidFile(ServiceType.MASTER)
+        self.pidFile = PidFile(ServiceType.MASTER)
 
         self.localServer = common.server.Server(
             "pcmd.master.localServer",
             "127.0.0.1",
-            -1,
-            self.localHandler,
+            common.util.random_port(),
+            self.local_handler,
         )
 
         self.slaveServer = common.server.Server(
             "pcmd.master.slaveServer",
             mainServer['HOST'],
             mainServer['PORT'],
-            self.slaveHandler,
+            self.slave_handler,
         )
 
-        self.logger.debug('created instance of master.Master')
+        self.logger.debug('created instance of pcmd.master.Master')
 
-    def masterLoop(self):
-        self.pidF.pid = os.getpid()
-        if self.pidF.isRunning():
+    def loop(self):
+        if self.pidFile.running():
             self.logger.error(
                 "pcmd master is already running with pid %d",
-                self.pidF.runningPid,
+                self.pidFile.runningPid,
             )
             return 1
+        else:
+            self.pidFile.create(self.localServer.port)
 
-        self.pidF.create(self.localServer.port)
-
-        self.logger.debug("starting masterLoop with pid %d", self.pidF.pid)
-        localThread = threading.Thread(
-            target = self.localServer.loop,
-        )
-        localThread.name = "master.localThread"
-        self.logger.debug("starting %s", localThread.getName())
-        localThread.start()
-
-        slaveThread = threading.Thread(
-            target = self.slaveServer.loop,
-        )
-        slaveThread.name = "master.slaveThread"
-        self.logger.debug("starting %s", slaveThread.getName())
-        slaveThread.start()
+        self.localServer.start()
+        self.slaveServer.start()
+        self.logger.debug("starting master with pid %d", self.pidFile.pid)
 
         try:
-            localThread.join()
-            slaveThread.join()
-        except KeyboardInterrupt as e:
+            self.localServer.thread.join()
+            self.slaveServer.thread.join()
+        except KeyboardInterrupt:
             return master.stop.main(self)
 
         return 0
 
-    def localHandler(self, commSocket, address):
-        request = commSocket.recv(4096)
+    def local_handler(self, communication, address):
+        request = communication.recv(4096)
         self.logger.debug('Received {} from {}'.format(request, address))
 
         if request == b'stop':
             self.logger.debug("stopping pcmd")
 
-            outShutdown = self.shutdown()
+            shutdown_status = self.shutdown()
 
-            if outShutdown == 0:
+            if shutdown_status == 0:
                 self.logger.debug("sending ok to master-stop")
-                commSocket.sendall(bytes('ok', 'utf-8'))
+                communication.sendall(bytes('ok', 'utf-8'))
             else:
                 self.logger.debug("sending 1 to master-stop")
-                commSocket.sendall(bytes('1', 'utf-8'))
+                communication.sendall(bytes('1', 'utf-8'))
 
-        commSocket.close()
+        communication.close()
 
-    def slaveHandler(self, slaveSocket, address):
-        request = slaveSocket.recv(4096)
+    def slave_handler(self, communication, address):
+        request = communication.recv(4096)
         self.logger.debug('Received {} from {}'.format(request, address))
 
         msg = 'HELLO SLAVE!'
-        slaveSocket.sendall(msg.encode('utf-8'))
-        slaveSocket.close()
+        communication.sendall(msg.encode('utf-8'))
+        communication.close()
 
     def shutdown(self):
-        outLocal = self.localServer.shutdown()
-        outSlave = self.slaveServer.shutdown()
+        local_status = self.localServer.shutdown()
+        slave_status = self.slaveServer.shutdown()
 
-        return outLocal or outSlave
+        return local_status or slave_status
+
+
+def get_settings(cli_args):
+    settings = {}
+
+    if cli_args['start']:
+        settings['operation'] = 'start'
+    elif cli_args['stop']:
+        settings['operation'] = 'stop'
+
+    if cli_args['-a'] or cli_args['--attach']:
+        settings['attach'] = True
+    else:
+        settings['attach'] = False
+
+    return settings
