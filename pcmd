@@ -11,7 +11,19 @@ Usage:
     pcmd master
         stop
             [-v | --verbose]
-    pcmd slave (start|stop) [--verbose]
+    pcmd slave
+        start
+            [-a | --attach]
+            [-v | --verbose]
+    pcmd slave
+        stop
+            [-v | --verbose]
+    pcmd config
+        set <name> <value>
+    pcmd config
+        get <name>
+    pcmd config
+        remove <name>
     pcmd --version
 
 Options:
@@ -30,7 +42,10 @@ import common.logger
 
 import master.main
 import master.master
+
 import slave
+
+import config.main
 
 
 def main(cli_args):
@@ -39,6 +54,8 @@ def main(cli_args):
         return master.main.main(master_root)
     elif cli_args['slave']:
         return slave.main(cli_args)
+    elif cli_args['config']:
+        return config.main.main(cli_args)
     else:
         raise Exception("Not Implemented")
 

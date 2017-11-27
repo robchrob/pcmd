@@ -12,12 +12,12 @@ class Server:
 
         self.address = address
         self.port = port
+        self.handlerFunction = handler_function
 
         self.serverSocket = None
-        self.handlerFunction = handler_function
         self.running = False
-
         self.thread = util.spawn_thread(self.name, self.loop)
+        self.start()
 
     def loop(self):
         self.serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -52,8 +52,8 @@ class Server:
         self.thread.start()
 
     def shutdown(self):
-        self.running = False
         self.serverSocket.shutdown(socket.SHUT_RDWR)
         self.serverSocket.close()
+        self.running = False
 
         return 0

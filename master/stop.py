@@ -1,4 +1,9 @@
-import socket
+from common.message import Message
+
+
+class Stop(Message):
+    def __init__(self):
+        super().__init__("master.message.stop")
 
 
 def main(master_root):
@@ -7,23 +12,16 @@ def main(master_root):
             'pcmd master is not currently running'
         )
         return 1
-    else:
-        (pid, port) = master_root.pidFile.read()
 
-    local_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    (_, port) = master_root.pidFile.read()
 
-    try:
-        local_socket.connect(('127.0.0.1', port))
-        local_socket.sendall(bytes('stop', 'utf-8'))
-        response = local_socket.recv(4096)
-    finally:
-        local_socket.close()
+    msg = Stop()
+    response = msg.send('127.0.0.1', port)
 
-    if response == b'ok':
+    if response.status == 0:
         master_root.pidFile.remove()
-        return 0
     else:
         master_root.logger.error(
-            'stopping the master failed - err (%s)', response
+            'stopping the pcmd.master failed - err (%s)', msg.status
         )
-        return 1
+    return msg.status

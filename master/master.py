@@ -1,4 +1,5 @@
 import logging
+import pickle
 
 from common.const import mainServer
 from common.pidfile import ServiceType, PidFile
@@ -14,7 +15,12 @@ class Master:
         self.settings = get_settings(cli_args)
 
         self.pidFile = PidFile(ServiceType.MASTER)
+        self.localServer = None
+        self.slaveServer = None
 
+        self.logger.debug('created instance of pcmd.master.Master')
+
+    def loop(self):
         self.localServer = common.server.Server(
             "pcmd.master.localServer",
             "127.0.0.1",
@@ -29,21 +35,16 @@ class Master:
             self.slave_handler,
         )
 
-        self.logger.debug('created instance of pcmd.master.Master')
-
-    def loop(self):
         if self.pidFile.running():
             self.logger.error(
-                "pcmd master is already running with pid %d",
+                "pcmd.master is already running with pid %d",
                 self.pidFile.runningPid,
             )
             return 1
         else:
             self.pidFile.create(self.localServer.port)
 
-        self.localServer.start()
-        self.slaveServer.start()
-        self.logger.debug("starting master with pid %d", self.pidFile.pid)
+        self.logger.debug("starting pcmd.master with pid %d", self.pidFile.pid)
 
         try:
             self.localServer.thread.join()
@@ -55,19 +56,17 @@ class Master:
 
     def local_handler(self, communication, address):
         request = communication.recv(4096)
-        self.logger.debug('Received {} from {}'.format(request, address))
+        # TODO validate object
+        request_obj = pickle.loads(request)
 
-        if request == b'stop':
-            self.logger.debug("stopping pcmd")
+        self.logger.debug(
+            'Received {} from {}'.format(request_obj.name, address)
+        )
 
+        if request_obj.name == 'master.message.stop':
             shutdown_status = self.shutdown()
-
-            if shutdown_status == 0:
-                self.logger.debug("sending ok to master-stop")
-                communication.sendall(bytes('ok', 'utf-8'))
-            else:
-                self.logger.debug("sending 1 to master-stop")
-                communication.sendall(bytes('1', 'utf-8'))
+            request_obj.status = shutdown_status
+            request_obj.respond(communication)
 
         communication.close()
 
