@@ -1,20 +1,21 @@
 import logging
 import pickle
 
-from common.const import mainServer
-from common.pidfile import ServiceType, PidFile
 import common.server
 import common.util
-
 import master.stop
+
+from common.const import ModuleType
+from common.pidfile import PidFile
+from common.status import Status
 
 
 class Master:
-    def __init__(self, cli_args):
+    def __init__(self, conf):
         self.logger = logging.getLogger('pcmd.master.Master')
-        self.settings = get_settings(cli_args)
+        self.conf = conf
 
-        self.pidFile = PidFile(ServiceType.MASTER)
+        self.pidFile = PidFile(ModuleType.MASTER)
         self.localServer = None
         self.slaveServer = None
 
@@ -30,8 +31,8 @@ class Master:
 
         self.slaveServer = common.server.Server(
             "pcmd.master.slaveServer",
-            mainServer['HOST'],
-            mainServer['PORT'],
+            self.conf.get('hostname'),
+            int(self.conf.get('port')),
             self.slave_handler,
         )
 
@@ -56,7 +57,6 @@ class Master:
 
     def local_handler(self, communication, address):
         request = communication.recv(4096)
-        # TODO validate object
         request_obj = pickle.loads(request)
 
         self.logger.debug(
@@ -66,6 +66,11 @@ class Master:
         if request_obj.name == 'master.message.stop':
             shutdown_status = self.shutdown()
             request_obj.status = shutdown_status
+            request_obj.respond(communication)
+        elif request_obj.name == 'master.message.status':
+            out = self.get_status()
+            request_obj.statusFull = out
+            request_obj.status = 0
             request_obj.respond(communication)
 
         communication.close()
@@ -84,18 +89,10 @@ class Master:
 
         return local_status or slave_status
 
+    def get_status(self):
+        out = Status()
+        out.name = "pcmd.master"
+        out.hostname = self.slaveServer.address
+        out.port = self.slaveServer.port
 
-def get_settings(cli_args):
-    settings = {}
-
-    if cli_args['start']:
-        settings['operation'] = 'start'
-    elif cli_args['stop']:
-        settings['operation'] = 'stop'
-
-    if cli_args['--attach']:
-        settings['attach'] = True
-    else:
-        settings['attach'] = False
-
-    return settings
+        return out

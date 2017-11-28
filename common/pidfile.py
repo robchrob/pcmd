@@ -1,27 +1,22 @@
-import enum
 import getpass
 import logging
 import os
 import tempfile
 
+from common.const import ModuleType
 from common.util import process_exist
 
 
-class ServiceType(enum.Enum):
-    MASTER = 0,
-    SLAVE = 1
-
-
 class PidFile:
-    def __init__(self, service_type):
+    def __init__(self, module_type):
         self.logger = logging.getLogger('pcmd.common.PidFile')
 
-        if service_type is ServiceType.MASTER:
+        if module_type is ModuleType.MASTER:
             filename = 'pcmd_master_{}.pid'.format(getpass.getuser())
-        elif service_type is ServiceType.SLAVE:
+        elif module_type is ModuleType.SLAVE:
             filename = 'pcmd_slave_{}.pid'.format(getpass.getuser())
         else:
-            raise Exception('unknown service type')
+            raise Exception('unknown module type')
 
         self.pidFilePath = os.path.join(
             tempfile.gettempdir(),

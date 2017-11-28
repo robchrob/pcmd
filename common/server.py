@@ -31,7 +31,7 @@ class Server:
         while True:
             try:
                 (commSocket, address) = self.serverSocket.accept()
-            except Exception as e:
+            except OSError as e:
                 if self.running is False:
                     break
                 else:
@@ -52,8 +52,8 @@ class Server:
         self.thread.start()
 
     def shutdown(self):
+        self.running = False
         self.serverSocket.shutdown(socket.SHUT_RDWR)
         self.serverSocket.close()
-        self.running = False
 
         return 0
