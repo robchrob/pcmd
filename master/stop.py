@@ -1,3 +1,17 @@
+"""pcmd-master-stop
+
+Usage:
+    pcmd master stop    [--version] [--help]
+                        [-v|-q]
+
+Options:
+    -v, --verbose   More detailed logs
+    -q, --quiet     Don't write to terminal
+    --help          Show this screen
+    --version       Show version
+
+"""
+
 from common.message import Message
 
 

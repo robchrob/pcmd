@@ -7,12 +7,11 @@ logger = logging.getLogger('pcmd.config.util')
 
 
 def get_userconf(cli_args):
-    if '--conf' not in cli_args or cli_args['--conf'] is None:
-        home_dir = str(Path.home())
-        conf_location = os.path.join(home_dir, ".pcmdconf")
-    else:
-        conf_location = cli_args['--conf']
+    location = get_userconf_path(cli_args)
+    return read_userconf(location)
 
+
+def read_userconf(conf_location):
     if os.path.exists(conf_location):
         try:
             config = configparser.ConfigParser()
@@ -35,4 +34,13 @@ def get_userconf(cli_args):
     )
     return config
 
+
+def get_userconf_path(cli_args):
+    if '--conf' not in cli_args or cli_args['--conf'] is None:
+        home_dir = str(Path.home())
+        conf_location = os.path.join(home_dir, ".pcmdconf")
+    else:
+        conf_location = cli_args['--conf']
+
+    return conf_location
 

@@ -10,3 +10,4 @@ class ModuleType(enum.Enum):
 app = dict(
     VERSION="0.1",
 )
+version = "pcmd {}".format(app['VERSION'])

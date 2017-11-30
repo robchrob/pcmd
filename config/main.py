@@ -1,4 +1,29 @@
+"""pcmd-config
+
+Usage:
+    pcmd config [--version] [--help]
+                <command> [<args>...]
+
+Commands:
+    set
+    get
+    remove
+
+Options:
+    --help      Show this screen
+    --version   Show version
+
+"""
+
 import enum
+
+import config.get
+import config.set
+import config.remove
+
+
+# TODO set (save to file if exists, otherwise error)
+# TODO remove (remove from file if exists, otherwise error)
 
 
 class CommandType(enum.Enum):
@@ -9,13 +34,8 @@ class CommandType(enum.Enum):
 
 def main(conf):
     if conf.command is CommandType.SET:
-        # return master.start.main(master_root)
-        pass
+        return config.set.main(conf)
     elif conf.command is CommandType.GET:
-        # return master.stop.main(master_root)
-        pass
+        return config.get.main(conf)
     elif conf.command is CommandType.REMOVE:
-        # return master.status.main(master_root)
-        pass
-    else:
-        raise Exception("Not Implemented")
+        return config.remove.main(conf)

@@ -1,3 +1,17 @@
+"""pcmd-master-status
+
+Usage:
+    pcmd master status  [--version] [--help]
+                        [-v|-q]
+
+Options:
+    -v, --verbose   More detailed logs
+    -q, --quiet     Don't write to terminal
+    --help          Show this screen
+    --version       Show version
+
+"""
+
 from common.message import Message
 from common.status import Status as StatusObj
 

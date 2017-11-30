@@ -3,45 +3,37 @@
 """pcmd - portable executor of arbitrary command(s)
 
 Usage:
-    pcmd master start [-v|-q] [-a] [-h ADDR] [-p NUM]
-    pcmd master stop [-v|-q]
-    pcmd master status [-v|-q]
-    pcmd master exec <cmd> [-v]
-    pcmd slave start [-av]
-    pcmd slave stop [-v]
-    pcmd config set <name> <value> [-v]
-    pcmd config get <name> [-v]
-    pcmd config remove <name> [-v]
+    pcmd    [--version] [--help]
+            <module> [<args>...]
+
+Modules:
+    master      master server module
+    slave       slave  server module
+    config      configuration module
 
 Options:
-    --help                      Show this screen
-    --version                   Show version
-    -a, --attach                Attach server start to the console
-    -h ADDR, --hostname=ADDR    Specify hostname
-    -p NUM, --port=NUM          Specify port
-    -v, --verbose               More detailed logs
-    -q, --quiet                 Don't print output to stdout
+    --help      Show this screen
+    --version   Show version
 
 """
-
 import sys
 
 import docopt
 
 import common.logger
 
-import master.main
 import master.master
+import master.main
 
 import config.main
+
 from common.const import ModuleType
-from config.configuration import Configuration
+import config.configuration
 
 
 def main(conf):
     if conf.module is ModuleType.MASTER:
-        master_root = master.master.Master(conf)
-        return master.main.main(master_root)
+        return master.main.main(conf)
 
     elif conf.module is ModuleType.SLAVE:
         return None
@@ -49,15 +41,23 @@ def main(conf):
     elif conf.module is ModuleType.CONFIG:
         return config.main.main(conf)
 
-    else:
-        raise Exception("Not Implemented")
-
 
 if __name__ == '__main__':
     cliArgs = docopt.docopt(
         __doc__,
-        version='pcmd {}'.format(common.const.app['VERSION'])
+        version=common.const.version,
+        options_first=True,
     )
-    logger = common.logger.get_logger('pcmd', cliArgs['--verbose'])
-    conf_main = Configuration(cliArgs)
+
+    logger = common.logger.get_logger('pcmd', True)
+
+    try:
+        conf_main = config.configuration.Configuration(cliArgs)
+    except config.configuration.ModuleNotFound:
+        docopt.docopt(
+            __doc__,
+            argv='--help'
+        )
+        sys.exit(0)
+
     sys.exit(main(conf_main))
