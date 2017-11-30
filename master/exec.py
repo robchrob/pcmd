@@ -36,8 +36,8 @@ def main(master_root):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         sock.connect((
-            master_root.conf.get('hostname'),
-            int(master_root.conf.get('port')),
+            master_root.conf.get('hostname', 'slave'),
+            int(master_root.conf.get('port', 'slave')),
         ))
 
         msg = Exec(master_root.conf.args['<cmd>'])
@@ -51,11 +51,9 @@ def main(master_root):
                 Message("master.exec.line.get").send_just(sock)
             elif response.type == DataType.MSG:
                 break
-
     except KeyboardInterrupt:
         return 1
     finally:
-        response = common.util.recvmsg(sock)
         sock.close()
 
     return response.obj.status

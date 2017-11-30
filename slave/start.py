@@ -1,40 +1,41 @@
-#!/bin/python3
-
 """pcmd-slave-start
 
 Usage:
-    start.py
-    start.py -h | --help
-    start.py --version
+    pcmd slave start    [--version] [--help]
+                        [--attach]
+                        [--hostname=ADDR] [--port=NUM]
+                        [--lhostname=ADDR] [--lport=NUM]
+                        [--verbose | --quiet]
+
+Options:
+    -a, --attach                Attach to the terminal
+
+    -h ADDR, --hostname=ADDR    Specify hostname
+    -p NUM, --port=NUM          Specify port
+
+    --lhostname=ADDR            Hostname for local communication
+    --lport=NUM                 Port for local communication
+
+    -v, --verbose               More detailed logs
+    -q, --quiet                 Don't write to terminal
+
+    --help                      Show this screen
+    --version                   Show version
+
 """
 
-import sys, os
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
+import os
+import multiprocessing
 
-import docopt
-import socket
-import logging
 
-from common.const import app, mainServer
+def main(slave_root):
+    if slave_root.conf.get('attach').lower() == 'true':
+        slave_root.logger.info("server in attached mode")
+        return slave_root.loop()
+    else:
+        p = multiprocessing.Process(
+            target=slave_root.loop,
+        )
+        p.start()
 
-import slave.main
-import slave.stop
-
-def main(cliArgs):
-    clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    clientSocket.connect((socket.gethostname(),mainServer['PORT']))
-
-    msg = 'HELLO SERVER!'
-    clientSocket.sendall(msg.encode('utf-8'))
-
-    response = clientSocket.recv(4096)
-    logging.debug('Received {}'.format(response))
-
-    return slave.stop.main(cliArgs)
-
-if __name__ == '__main__':
-    cliArgs = docopt.docopt(
-        __doc__,
-        version='{} {}'.format(app['NAME'],app['VERSION'])
-    )
-    sys.exit(main(cliArgs))
+        os._exit(0)

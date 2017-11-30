@@ -28,6 +28,7 @@ import common
 from common.const import ModuleType
 
 from master.main import CommandType as MasterCommand
+from slave.main import CommandType as SlaveCommand
 from config.main import CommandType as ConfigCommand
 
 
@@ -161,6 +162,41 @@ class Configuration:
                 if cli_args['--port']:
                     conf.set('master', 'port', cli_args['--port'])
 
+        elif self.module is ModuleType.SLAVE:
+            if self.command is SlaveCommand.START:
+                if cli_args['--attach']:
+                    conf.set('slave', 'attach', 'true')
+
+                if cli_args['--hostname']:
+                    conf.set('slave', 'hostname', cli_args['--hostname'])
+                if cli_args['--port']:
+                    conf.set('slave', 'port', cli_args['--port'])
+
+                if cli_args['--lhostname']:
+                    conf.set(
+                        'slave',
+                        'local_hostname',
+                        cli_args['--lhostname']
+                    )
+                if cli_args['--lport']:
+                    conf.set(
+                        'slave',
+                        'local_port',
+                        cli_args['--lport']
+                    )
+
+            elif self.command is SlaveCommand.STOP:
+                if cli_args['--hostname']:
+                    conf.set('slave', 'local_hostname', cli_args['--hostname'])
+                if cli_args['--port']:
+                    conf.set('slave', 'local_port', cli_args['--port'])
+
+            elif self.command is SlaveCommand.STATUS:
+                if cli_args['--hostname']:
+                    conf.set('slave', 'local_hostname', cli_args['--hostname'])
+                if cli_args['--port']:
+                    conf.set('slave', 'local_port', cli_args['--port'])
+
         elif self.module is ModuleType.CONFIG:
             if self.command is ConfigCommand.GET:
                 pass
@@ -194,7 +230,19 @@ def get_command_cli(module_type, command_type, module_cli):
             )
 
     elif module_type is ModuleType.SLAVE:
-        raise Exception('Not Implemented')
+        if command_type is SlaveCommand.START:
+            import slave.start
+            func = slave.start
+        elif command_type is SlaveCommand.STOP:
+            import slave.stop
+            func = slave.stop
+        elif command_type is SlaveCommand.STATUS:
+            import slave.status
+            func = slave.status
+        else:
+            raise Exception(
+                'command {} not implemented'.format(command_type.name)
+            )
 
     elif module_type is ModuleType.CONFIG:
         if command_type is ConfigCommand.SET:
@@ -248,7 +296,14 @@ def get_command(module_type, cli_args):
             )
 
     elif module_type is ModuleType.SLAVE:
-        raise Exception('Not Implemented')
+        try:
+            command = SlaveCommand[module_cli['<command>'].upper()]
+        except KeyError:
+            import slave.main
+            return docopt.docopt(
+                slave.main.__doc__,
+                argv='--help'
+            )
 
     elif module_type is ModuleType.CONFIG:
         try:

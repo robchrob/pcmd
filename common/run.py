@@ -36,5 +36,4 @@ def execute(msg, comm):
 
     proc.wait()
     msg.status = proc.returncode
-
     Data(DataType.MSG, msg).send_just(comm)

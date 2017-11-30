@@ -23,9 +23,8 @@ import docopt
 
 import common.logger
 
-import master.master
 import master.main
-
+import slave.main
 import config.main
 
 from common.const import ModuleType
@@ -37,7 +36,7 @@ def main(conf):
         return master.main.main(conf)
 
     elif conf.module is ModuleType.SLAVE:
-        return None
+        return slave.main.main(conf)
 
     elif conf.module is ModuleType.CONFIG:
         return config.main.main(conf)

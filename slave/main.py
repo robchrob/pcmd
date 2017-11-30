@@ -1,34 +1,42 @@
-#!/bin/python3
-
 """pcmd-slave
 
 Usage:
-    main.py slave (start|stop)
-    main.py -h | --help
-    main.py --version
+    pcmd slave  [--version] [--help]
+                <command> [<args>...]
+
+Commands:
+    start
+    stop
+    status
+
+Options:
+    --help      Show this screen
+    --version   Show version
+
 """
 
-import sys, os
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
+import enum
 
-import docopt
-
-from common.const import app
-
+import slave.slave
+import slave.slave
 import slave.start
 import slave.stop
+import slave.status
 
-def main(cliArgs):
-    if cliArgs['start']:
-        return slave.start.main(cliArgs)
-    elif cliArgs['stop']:
-        return slave.stop.main(cliArgs)
-    else:
-        raise Exception("Not Implemented")
 
-if __name__ == '__main__':
-    cliArgs = docopt.docopt(
-        __doc__,
-        version='{} {}'.format(app['NAME'],app['VERSION'])
-    )
-    sys.exit(main(cliArgs))
+class CommandType(enum.Enum):
+    START = 0,
+    STOP = 1,
+    STATUS = 2,
+
+
+def main(conf):
+    slave_root = slave.slave.Slave(conf)
+    if conf.command is CommandType.START:
+        return slave.start.main(slave_root)
+
+    elif conf.command is CommandType.STOP:
+        return slave.stop.main(slave_root)
+
+    elif conf.command is CommandType.STATUS:
+        return slave.status.main(slave_root)

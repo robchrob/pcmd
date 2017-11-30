@@ -1,9 +1,9 @@
-"""pcmd-slave-stop
+"""pcmd-slave-status
 
 Usage:
-    pcmd slave stop [--version] [--shelp]
-                    [--hostname=ADDR] [--port=NUM]
-                    [--verbose | --quiet]
+    pcmd slave status   [--version] [--help]
+                        [--hostname=ADDR] [--port=NUM]
+                        [--verbose | --quiet]
 
 Options:
     -h ADDR, --hostname=ADDR    Specify hostname of slave local
@@ -18,25 +18,24 @@ Options:
 """
 
 from common.message import Message
+from common.status import Status as StatusObj
 
 
-class Stop(Message):
+class Status(Message):
     def __init__(self):
-        super().__init__("slave.message.stop")
+        super().__init__("slave.message.status")
+        self.statusFull = StatusObj()
 
 
 def main(slave_root):
-    # TODO stop remotely
     if not slave_root.pidFile.running():
         slave_root.logger.error(
-            'pcmd slave is not currently running'
+            'pcmd.slave is not currently running'
         )
         return 1
 
     if slave_root.conf.get('local_port') == "random":
         if slave_root.conf.get('local_hostname') in ("127.0.0.1", "localhost"):
-            (_, port) = slave_root.pidFile.read()
-        elif slave_root.local:
             (_, port) = slave_root.pidFile.read()
         else:
             slave_root.logger.error(
@@ -48,13 +47,13 @@ def main(slave_root):
     else:
         port = int(slave_root.conf.get('local_port'))
 
-    msg = Stop()
+    msg = Status()
     response = msg.send(slave_root.conf.get('local_hostname'), port)
 
     if response.status == 0:
-        slave_root.pidFile.remove()
+        slave_root.logger.info(response.statusFull)
     else:
         slave_root.logger.error(
-            'stopping the pcmd.slave failed - err (%s)', msg.status
+            'getting status of the pcmd.slave failed - err (%s)', msg.status
         )
     return msg.status
