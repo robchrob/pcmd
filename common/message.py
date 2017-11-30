@@ -1,5 +1,6 @@
 import socket
 import pickle
+import struct
 
 
 class Message:
@@ -24,6 +25,11 @@ class Message:
         response_obj = pickle.loads(response)
 
         return response_obj
+
+    def send_just(self, sock):
+        to_send = pickle.dumps(self)
+        to_send = struct.pack('>I', len(to_send)) + to_send
+        sock.sendall(to_send)
 
     def respond(self, sock):
         serialized = pickle.dumps(self)

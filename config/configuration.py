@@ -150,7 +150,16 @@ class Configuration:
                     conf.set('master', 'local_port', cli_args['--port'])
 
             elif self.command is MasterCommand.STATUS:
-                pass
+                if cli_args['--hostname']:
+                    conf.set('master', 'local_hostname', cli_args['--hostname'])
+                if cli_args['--port']:
+                    conf.set('master', 'local_port', cli_args['--port'])
+
+            elif self.command is MasterCommand.EXEC:
+                if cli_args['--hostname']:
+                    conf.set('master', 'hostname', cli_args['--hostname'])
+                if cli_args['--port']:
+                    conf.set('master', 'port', cli_args['--port'])
 
         elif self.module is ModuleType.CONFIG:
             if self.command is ConfigCommand.GET:
@@ -176,6 +185,9 @@ def get_command_cli(module_type, command_type, module_cli):
         elif command_type is MasterCommand.STATUS:
             import master.status
             func = master.status
+        elif command_type is MasterCommand.EXEC:
+            import master.exec
+            func = master.exec
         else:
             raise Exception(
                 'command {} not implemented'.format(command_type.name)

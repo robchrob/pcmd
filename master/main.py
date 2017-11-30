@@ -8,6 +8,7 @@ Commands:
     start
     stop
     status
+    exec
 
 Options:
     --help      Show this screen
@@ -21,12 +22,14 @@ import master.master
 import master.start
 import master.stop
 import master.status
+import master.exec
 
 
 class CommandType(enum.Enum):
     START = 0,
     STOP = 1,
     STATUS = 2,
+    EXEC = 3,
 
 
 def main(conf):
@@ -39,3 +42,6 @@ def main(conf):
 
     elif conf.command is CommandType.STATUS:
         return master.status.main(master_root)
+
+    elif conf.command is CommandType.EXEC:
+        return master.exec.main(master_root)

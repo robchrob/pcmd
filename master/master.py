@@ -8,6 +8,7 @@ import master.stop
 from common.const import ModuleType
 from common.pidfile import PidFile
 from common.status import Status
+from common.run import execute
 
 
 class Master:
@@ -78,11 +79,16 @@ class Master:
         communication.close()
 
     def slave_handler(self, communication, address):
-        request = communication.recv(4096)
-        self.logger.debug('Received {} from {}'.format(request, address))
+        request_obj = common.util.recvmsg(communication)
 
-        msg = 'HELLO SLAVE!'
-        communication.sendall(msg.encode('utf-8'))
+        self.logger.debug(
+            'Received {} from {}'.format(request_obj.name, address)
+        )
+
+        if request_obj.name == 'master.message.exec':
+            self.logger.debug("executing {}".format(request_obj.cmd))
+            execute(request_obj, communication)
+
         communication.close()
 
     def shutdown(self):

@@ -2,6 +2,10 @@ import os
 import socket
 import threading
 import logging
+import struct
+import pickle
+
+import common
 
 logger = logging.getLogger('pcmd.common.Util')
 
@@ -39,3 +43,28 @@ def random_port():
     logger.debug("random port %s is open", port)
 
     return port
+
+
+def recvall(sock, n):
+    data = b''
+    while len(data) < n:
+        packet = sock.recv(n - len(data))
+        if not packet:
+            return None
+        data += packet
+    return data
+
+
+def recvmsg(sock):
+    raw_len = common.util.recvall(sock, 4)
+
+    if not raw_len:
+        return None
+
+    msg_len = struct.unpack('>I', raw_len)[0]
+    raw_obj = common.util.recvall(sock, msg_len)
+
+    if raw_obj is None:
+        return None
+
+    return pickle.loads(raw_obj)

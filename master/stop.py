@@ -1,7 +1,7 @@
 """pcmd-master-stop
 
 Usage:
-    pcmd master stop    [--version] [--help]
+    pcmd master stop    [--version] [--shelp]
                         [--hostname=ADDR] [--port=NUM]
                         [--verbose | --quiet]
 
@@ -26,6 +26,7 @@ class Stop(Message):
 
 
 def main(master_root):
+    # TODO stop remotely
     if not master_root.pidFile.running():
         master_root.logger.error(
             'pcmd master is not currently running'
