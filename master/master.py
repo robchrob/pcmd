@@ -69,6 +69,8 @@ class Master:
         if request_obj.name == 'master.message.stop':
             shutdown_status = self.shutdown()
             request_obj.status = shutdown_status
+            if request_obj.status == 0:
+                self.pidFile.remove()
             request_obj.respond(communication)
         elif request_obj.name == 'master.message.status':
             out = self.get_status()

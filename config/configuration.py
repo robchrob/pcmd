@@ -47,8 +47,8 @@ class Configuration:
             self.command = command
 
         self.args = get_cli(self.module, self.command, cli_args)
-        self.user_conf = config.util.get_userconf()
         self.conf = self.read_all(self.args)
+        self.user_conf = None
 
     def get(self, key, section=None):
         if section is None:
@@ -110,6 +110,7 @@ class Configuration:
         user_conf = config.util.get_userconf()
 
         if user_conf:
+            self.user_conf = user_conf
             default_conf.read_dict(user_conf)
             self.logger.debug("user configuration merged with defaults")
 

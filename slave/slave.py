@@ -69,6 +69,8 @@ class Slave:
         if request_obj.name == 'slave.message.stop':
             shutdown_status = self.shutdown()
             request_obj.status = shutdown_status
+            if request_obj.status == 0:
+                self.pidFile.remove()
             request_obj.respond(communication)
         elif request_obj.name == 'slave.message.status':
             out = self.get_status()

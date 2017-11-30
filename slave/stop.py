@@ -26,35 +26,35 @@ class Stop(Message):
 
 
 def main(slave_root):
-    # TODO stop remotely
-    if not slave_root.pidFile.running():
-        slave_root.logger.error(
-            'pcmd slave is not currently running'
-        )
-        return 1
-
-    if slave_root.conf.get('local_port') == "random":
-        if slave_root.conf.get('local_hostname') in ("127.0.0.1", "localhost"):
-            (_, port) = slave_root.pidFile.read()
-        elif slave_root.local:
-            (_, port) = slave_root.pidFile.read()
+    if (
+        slave_root.conf.get('local_hostname') in
+        ("127.0.0.1", "localhost") or
+        slave_root.local
+    ):
+        if not slave_root.pidFile.running():
+            slave_root.logger.error(
+                'pcmd master is not currently running'
+            )
+            return 1
         else:
+            (_, port) = slave_root.pidFile.read()
+    else:
+        if slave_root.conf.get('local_port') == 'random':
             slave_root.logger.error(
                 "cannot determine port for {}".format(
                     slave_root.conf.get('local_hostname')
                 )
             )
             return 1
-    else:
-        port = int(slave_root.conf.get('local_port'))
+        else:
+            port = int(slave_root.conf.get('local_port'))
 
     msg = Stop()
     response = msg.send(slave_root.conf.get('local_hostname'), port)
 
-    if response.status == 0:
-        slave_root.pidFile.remove()
-    else:
+    if response.status != 0:
         slave_root.logger.error(
-            'stopping the pcmd.slave failed - err (%s)', msg.status
+            'stopping the pcmd.slave failed', msg.status
         )
+
     return msg.status
