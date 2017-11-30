@@ -6,11 +6,15 @@
 [master]
     hostname = 0.0.0.0
     port = 1337
+    local_hostname = 127.0.0.1
+    local_port = random
     attach = false
 
 [slave]
     hostname = 0.0.0.0
     port = 1338
+    local_hostname = 127.0.0.1
+    local_port = random
     attach = false
 """
 
@@ -42,6 +46,7 @@ class Configuration:
             self.command = command
 
         self.args = get_cli(self.module, self.command, cli_args)
+        self.user_conf = config.util.get_userconf()
         self.conf = self.read_all(self.args)
 
     def get(self, key, section=None):
@@ -50,33 +55,29 @@ class Configuration:
         return self.conf.get(section, key)
 
     def set(self, section, key, value):
-        user_conf = config.util.get_userconf(self.args)
-
-        if user_conf:
+        if self.user_conf:
             try:
-                user_conf.set(section, key, value)
+                self.user_conf.set(section, key, value)
             except configparser.NoSectionError:
-                user_conf.add_section(section)
+                self.user_conf.add_section(section)
             finally:
-                user_conf.set(section, key, value)
+                self.user_conf.set(section, key, value)
 
-            with open(config.util.get_userconf_path(self.args), 'w') as conf:
-                user_conf.write(conf)
+            with open(config.util.get_userconf_path(), 'w') as conf:
+                self.user_conf.write(conf)
         else:
             raise UserConfigNotFound
 
     def remove(self, section, key):
-        user_conf = config.util.get_userconf(self.args)
-
-        if user_conf:
+        if self.user_conf:
             try:
-                out_remove = user_conf.remove_option(section, key)
+                out_remove = self.user_conf.remove_option(section, key)
             except configparser.NoSectionError as e:
                 raise e
 
             if out_remove:
-                with open(config.util.get_userconf_path(self.args), 'w') as conf:
-                    user_conf.write(conf)
+                with open(config.util.get_userconf_path(), 'w') as f:
+                    self.user_conf.write(f)
                 return out_remove
             else:
                 raise ValueNotFound
@@ -94,7 +95,7 @@ class Configuration:
 
     def read_all(self, cli_args):
         conf = self.read_default()
-        conf = self.add_userconf(conf, cli_args)
+        conf = self.add_userconf(conf)
         conf = self.add_params(conf, cli_args)
         return conf
 
@@ -104,8 +105,8 @@ class Configuration:
         self.logger.debug("default configuration loaded")
         return conf
 
-    def add_userconf(self, default_conf, cli_args):
-        user_conf = config.util.get_userconf(cli_args)
+    def add_userconf(self, default_conf):
+        user_conf = config.util.get_userconf()
 
         if user_conf:
             default_conf.read_dict(user_conf)
@@ -123,13 +124,30 @@ class Configuration:
             if self.command is MasterCommand.START:
                 if cli_args['--attach']:
                     conf.set('master', 'attach', 'true')
+
                 if cli_args['--hostname']:
                     conf.set('master', 'hostname', cli_args['--hostname'])
                 if cli_args['--port']:
                     conf.set('master', 'port', cli_args['--port'])
 
+                if cli_args['--lhostname']:
+                    conf.set(
+                        'master',
+                        'local_hostname',
+                        cli_args['--lhostname']
+                    )
+                if cli_args['--lport']:
+                    conf.set(
+                        'master',
+                        'local_port',
+                        cli_args['--lport']
+                    )
+
             elif self.command is MasterCommand.STOP:
-                pass
+                if cli_args['--hostname']:
+                    conf.set('master', 'local_hostname', cli_args['--hostname'])
+                if cli_args['--port']:
+                    conf.set('master', 'local_port', cli_args['--port'])
 
             elif self.command is MasterCommand.STATUS:
                 pass

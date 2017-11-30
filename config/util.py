@@ -1,13 +1,13 @@
 import configparser
 import logging
 from pathlib import Path
-import os.path
+import os
 
 logger = logging.getLogger('pcmd.config.util')
 
 
-def get_userconf(cli_args):
-    location = get_userconf_path(cli_args)
+def get_userconf():
+    location = get_userconf_path()
     return read_userconf(location)
 
 
@@ -35,12 +35,15 @@ def read_userconf(conf_location):
     return config
 
 
-def get_userconf_path(cli_args):
-    if '--conf' not in cli_args or cli_args['--conf'] is None:
+def get_userconf_path():
+    if not os.environ.get('PCMDRC') and not os.environ.get('PCMDCONF'):
         home_dir = str(Path.home())
         conf_location = os.path.join(home_dir, ".pcmdconf")
     else:
-        conf_location = cli_args['--conf']
+        if os.environ.get('PCMDRC'):
+            conf_location = os.environ.get('PCMDRC')
+        else:
+            conf_location = os.environ.get('PCMDCONF')
 
     return conf_location
 

@@ -22,10 +22,6 @@ import config.set
 import config.remove
 
 
-# TODO set (save to file if exists, otherwise error)
-# TODO remove (remove from file if exists, otherwise error)
-
-
 class CommandType(enum.Enum):
     SET = 0,
     GET = 1,

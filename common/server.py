@@ -11,7 +11,11 @@ class Server:
         self.logger = logging.getLogger(name)
 
         self.address = address
-        self.port = port
+        if port != "random":
+            self.port = int(port)
+        else:
+            self.port = util.random_port()
+
         self.handlerFunction = handler_function
 
         self.serverSocket = None

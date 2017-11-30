@@ -2,13 +2,18 @@
 
 Usage:
     pcmd master status  [--version] [--help]
-                        [-v|-q]
+                        [--hostname=ADDR] [--port=NUM]
+                        [--verbose | --quiet]
 
 Options:
-    -v, --verbose   More detailed logs
-    -q, --quiet     Don't write to terminal
-    --help          Show this screen
-    --version       Show version
+    -h ADDR, --hostname=ADDR    Specify hostname of master local
+    -p NUM, --port=NUM          Specify port of master local
+
+    -v, --verbose               More detailed logs
+    -q, --quiet                 Don't write to terminal
+
+    --help                      Show this screen
+    --version                   Show version
 
 """
 
@@ -29,10 +34,21 @@ def main(master_root):
         )
         return 1
 
-    (_, port) = master_root.pidFile.read()
+    if master_root.conf.get('local_port') == "random":
+        if master_root.conf.get('local_hostname') in ("127.0.0.1", "localhost"):
+            (_, port) = master_root.pidFile.read()
+        else:
+            master_root.logger.error(
+                "cannot determine port for {}".format(
+                    master_root.conf.get('local_hostname')
+                )
+            )
+            return 1
+    else:
+        port = int(master_root.conf.get('local_port'))
 
     msg = Status()
-    response = msg.send('127.0.0.1', port)
+    response = msg.send(master_root.conf.get('local_hostname'), port)
 
     if response.status == 0:
         master_root.logger.info(response.statusFull)

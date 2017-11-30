@@ -2,16 +2,25 @@
 
 Usage:
     pcmd master start [--version] [--help]
-                      [--attach] [--hostname] [--port=NUM] [-v|-q]
+                      [--attach]
+                      [--hostname=ADDR] [--port=NUM]
+                      [--lhostname=ADDR] [--lport=NUM]
+                      [--verbose | --quiet]
 
 Options:
-    -a, --attach            Attach to the terminal
-    -h, --hostname          Specify different hostname
-    -p NUM, --port=NUM      Specify different port
-    -v, --verbose           More detailed logs
-    -q, --quiet             Don't write to terminal
-    --help                  Show this screen
-    --version               Show version
+    -a, --attach                Attach to the terminal
+
+    -h ADDR, --hostname=ADDR    Specify hostname
+    -p NUM, --port=NUM          Specify port
+
+    --lhostname=ADDR            Hostname for local communication
+    --lport=NUM                 Port for local communication
+
+    -v, --verbose               More detailed logs
+    -q, --quiet                 Don't write to terminal
+
+    --help                      Show this screen
+    --version                   Show version
 
 """
 

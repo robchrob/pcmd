@@ -13,6 +13,7 @@ from common.status import Status
 class Master:
     def __init__(self, conf):
         self.logger = logging.getLogger('pcmd.master.Master')
+        self.local = False
         self.conf = conf
 
         self.pidFile = PidFile(ModuleType.MASTER)
@@ -24,15 +25,15 @@ class Master:
     def loop(self):
         self.localServer = common.server.Server(
             "pcmd.master.localServer",
-            "127.0.0.1",
-            common.util.random_port(),
+            self.conf.get('local_hostname'),
+            self.conf.get('local_port'),
             self.local_handler,
         )
 
         self.slaveServer = common.server.Server(
-            "pcmd.master.slaveServer",
+            "pcmd.master.slaveSever",
             self.conf.get('hostname'),
-            int(self.conf.get('port')),
+            self.conf.get('port'),
             self.slave_handler,
         )
 
@@ -44,6 +45,7 @@ class Master:
             return 1
         else:
             self.pidFile.create(self.localServer.port)
+            self.local = True
 
         self.logger.debug("starting pcmd.master with pid %d", self.pidFile.pid)
 
@@ -94,5 +96,7 @@ class Master:
         out.name = "pcmd.master"
         out.hostname = self.slaveServer.address
         out.port = self.slaveServer.port
+        out.lhostname = self.localServer.address
+        out.lport = self.localServer.port
 
         return out

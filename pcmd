@@ -16,6 +16,7 @@ Options:
     --version   Show version
 
 """
+
 import sys
 
 import docopt
