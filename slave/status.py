@@ -16,15 +16,15 @@ Options:
     --version                   Show version
 
 """
-
+from common.const import ModuleType
 from common.message import Message
 from common.status import Status as StatusObj
 
 
 class Status(Message):
-    def __init__(self):
+    def __init__(self, module_type):
         super().__init__("slave.message.status")
-        self.statusFull = StatusObj()
+        self.statusFull = StatusObj(module_type)
 
 
 def main(slave_root):
@@ -47,8 +47,8 @@ def main(slave_root):
     else:
         port = int(slave_root.conf.get('local_port'))
 
-    msg = Status()
-    response = msg.send(slave_root.conf.get('local_hostname'), port)
+    msg = Status(ModuleType.SLAVE)
+    response = msg.send_get(slave_root.conf.get('local_hostname'), port)
 
     if response.status == 0:
         slave_root.logger.info(response.statusFull)
@@ -56,4 +56,5 @@ def main(slave_root):
         slave_root.logger.error(
             'getting status of the pcmd.slave failed - err (%s)', msg.status
         )
-    return msg.status
+
+    return response.status

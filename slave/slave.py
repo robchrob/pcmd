@@ -1,5 +1,5 @@
 import logging
-import pickle
+import os
 
 import common.server
 import common.util
@@ -7,7 +7,6 @@ import slave.stop
 
 from common.const import ModuleType
 from common.pidfile import PidFile
-from common.status import Status
 from common.run import execute
 
 
@@ -19,7 +18,7 @@ class Slave:
 
         self.pidFile = PidFile(ModuleType.SLAVE)
         self.localServer = None
-        self.slaveServer = None
+        self.masterServer = None
 
         self.logger.debug('created instance of pcmd.slave.Slave')
 
@@ -31,7 +30,7 @@ class Slave:
             self.local_handler,
         )
 
-        self.slaveServer = common.server.Server(
+        self.masterServer = common.server.Server(
             "pcmd.slave.masterServer",
             self.conf.get('hostname'),
             self.conf.get('port'),
@@ -52,18 +51,20 @@ class Slave:
 
         try:
             self.localServer.thread.join()
-            self.slaveServer.thread.join()
+            self.masterServer.thread.join()
         except KeyboardInterrupt:
             return slave.stop.main(self)
 
         return 0
 
     def local_handler(self, communication, address):
-        request = communication.recv(4096)
-        request_obj = pickle.loads(request)
+        request_obj = common.util.recvmsg(communication)
 
         self.logger.debug(
-            'Received {} from {}'.format(request_obj.name, address)
+            'slave.localServer received {} from {}'.format(
+                request_obj.name,
+                address
+            )
         )
 
         if request_obj.name == 'slave.message.stop':
@@ -71,12 +72,12 @@ class Slave:
             request_obj.status = shutdown_status
             if request_obj.status == 0:
                 self.pidFile.remove()
-            request_obj.respond(communication)
+            request_obj.send(communication)
+
         elif request_obj.name == 'slave.message.status':
-            out = self.get_status()
-            request_obj.statusFull = out
+            request_obj.statusFull = self.fill_status(request_obj.statusFull)
             request_obj.status = 0
-            request_obj.respond(communication)
+            request_obj.send(communication)
 
         communication.close()
 
@@ -84,27 +85,38 @@ class Slave:
         request_obj = common.util.recvmsg(communication)
 
         self.logger.debug(
-            'Received {} from {}'.format(request_obj.name, address)
+            'slave.masterServer received {} from {}'.format(
+                request_obj.name,
+                address
+            )
         )
 
         if request_obj.name == 'master.message.exec':
             self.logger.debug("executing {}".format(request_obj.cmd))
-            execute(request_obj, communication)
+            out = execute(request_obj, communication)
+
+            if out == 0:
+                self.logger.debug("{} executed".format(request_obj.cmd))
+            else:
+                self.logger.debug("{} stopped".format(request_obj.cmd))
+
+        elif request_obj.name == 'common.slave.ping':
+            request_obj.env = dict(os.environ)
+            request_obj.send(communication)
 
         communication.close()
 
     def shutdown(self):
         local_status = self.localServer.shutdown()
-        slave_status = self.slaveServer.shutdown()
+        slave_status = self.masterServer.shutdown()
 
         return local_status or slave_status
 
-    def get_status(self):
-        out = Status()
-        out.name = "pcmd.slave"
-        out.hostname = self.slaveServer.address
-        out.port = self.slaveServer.port
-        out.lhostname = self.localServer.address
-        out.lport = self.localServer.port
+    def fill_status(self, obj):
+        obj.name = "pcmd.slave"
+        obj.hostname = self.masterServer.address
+        obj.port = self.masterServer.port
+        obj.lhostname = self.localServer.address
+        obj.lport = self.localServer.port
 
-        return out
+        return obj

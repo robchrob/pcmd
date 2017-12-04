@@ -68,3 +68,8 @@ def recvmsg(sock):
         return None
 
     return pickle.loads(raw_obj)
+
+
+def read_file(path):
+    with open(path, 'r') as f:
+        return f.read()

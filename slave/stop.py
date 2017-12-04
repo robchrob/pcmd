@@ -27,13 +27,13 @@ class Stop(Message):
 
 def main(slave_root):
     if (
-        slave_root.conf.get('local_hostname') in
-        ("127.0.0.1", "localhost") or
-        slave_root.local
+            slave_root.conf.get('local_hostname') in
+            ("127.0.0.1", "localhost") or
+            slave_root.local
     ):
         if not slave_root.pidFile.running():
             slave_root.logger.error(
-                'pcmd master is not currently running'
+                'pcmd.slave is not currently running'
             )
             return 1
         else:
@@ -50,11 +50,15 @@ def main(slave_root):
             port = int(slave_root.conf.get('local_port'))
 
     msg = Stop()
-    response = msg.send(slave_root.conf.get('local_hostname'), port)
+    response = msg.send_get(slave_root.conf.get('local_hostname'), port)
 
     if response.status != 0:
         slave_root.logger.error(
             'stopping the pcmd.slave failed', msg.status
+        )
+    else:
+        slave_root.logger.debug(
+            'stopping the pcmd.slave'
         )
 
     return msg.status

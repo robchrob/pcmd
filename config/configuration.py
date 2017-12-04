@@ -85,6 +85,9 @@ class Configuration:
         else:
             raise UserConfigNotFound
 
+    def get_arg(self, name):
+        return self.args[name]
+
     def __str__(self):
         out = "\n"
         for section in self.conf.sections():
@@ -158,10 +161,31 @@ class Configuration:
                     conf.set('master', 'local_port', cli_args['--port'])
 
             elif self.command is MasterCommand.EXEC:
+                pass
+
+            elif self.command is MasterCommand.ADD:
                 if cli_args['--hostname']:
-                    conf.set('master', 'hostname', cli_args['--hostname'])
+                    conf.set('master', 'local_hostname', cli_args['--hostname'])
                 if cli_args['--port']:
-                    conf.set('master', 'port', cli_args['--port'])
+                    conf.set('master', 'local_port', cli_args['--port'])
+
+            elif self.command is MasterCommand.REMOVE:
+                if cli_args['--hostname']:
+                    conf.set('master', 'local_hostname', cli_args['--hostname'])
+                if cli_args['--port']:
+                    conf.set('master', 'local_port', cli_args['--port'])
+
+            elif self.command is MasterCommand.LIST:
+                if cli_args['--hostname']:
+                    conf.set('master', 'local_hostname', cli_args['--hostname'])
+                if cli_args['--port']:
+                    conf.set('master', 'local_port', cli_args['--port'])
+
+            elif self.command is MasterCommand.ENV:
+                if cli_args['--hostname']:
+                    conf.set('master', 'local_hostname', cli_args['--hostname'])
+                if cli_args['--port']:
+                    conf.set('master', 'local_port', cli_args['--port'])
 
         elif self.module is ModuleType.SLAVE:
             if self.command is SlaveCommand.START:
@@ -225,6 +249,18 @@ def get_command_cli(module_type, command_type, module_cli):
         elif command_type is MasterCommand.EXEC:
             import master.exec
             func = master.exec
+        elif command_type is MasterCommand.ADD:
+            import master.add
+            func = master.add
+        elif command_type is MasterCommand.REMOVE:
+            import master.remove
+            func = master.remove
+        elif command_type is MasterCommand.LIST:
+            import master.list
+            func = master.list
+        elif command_type is MasterCommand.ENV:
+            import master.env
+            func = master.env
         else:
             raise Exception(
                 'command {} not implemented'.format(command_type.name)

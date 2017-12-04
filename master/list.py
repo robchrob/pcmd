@@ -1,9 +1,9 @@
-"""pcmd-master-status
+"""pcmd-master-list
 
 Usage:
-    pcmd master status  [--version] [--help]
-                        [--hostname=ADDR] [--port=NUM]
-                        [--verbose | --quiet]
+    pcmd master list [--version] [--help]
+                     [--verbose | --quiet]
+                     [--hostname=ADDR] [--port=NUM]
 
 Options:
     -h ADDR, --hostname=ADDR    Specify hostname of master local
@@ -18,14 +18,12 @@ Options:
 """
 
 from common.message import Message
-from common.status import Status as StatusObj
-from common.const import ModuleType
 
 
-class Status(Message):
-    def __init__(self, module_type):
-        super().__init__("master.message.status")
-        self.statusFull = StatusObj(module_type)
+class List(Message):
+    def __init__(self):
+        super().__init__("master.message.list")
+        self.slaves = None
 
 
 def main(master_root):
@@ -52,14 +50,27 @@ def main(master_root):
         else:
             port = int(master_root.conf.get('local_port'))
 
-    msg = Status(ModuleType.MASTER)
-    response = msg.send_get(master_root.conf.get('local_hostname'), port)
+    msg = List()
 
-    if response.status == 0:
-        master_root.logger.info(response.statusFull)
+    response = msg.send_get(
+        master_root.conf.get('local_hostname'),
+        port
+    )
+
+    if response.status != 0:
+        try:
+            raise response.err
+        except Exception as e:
+            raise e
     else:
-        master_root.logger.error(
-            'getting status of the pcmd.master failed - err (%s)', msg.status
-        )
+        for slave in response.slaves:
+            if not master_root.conf.get_arg('--verbose'):
+                master_root.logger.info(
+                    "{}".format(slave.name)
+                )
+            else:
+                master_root.logger.info(
+                    "{} - {}:{}".format(slave.name, slave.hostname, slave.port)
+                )
 
     return response.status

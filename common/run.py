@@ -6,7 +6,7 @@ import common
 
 class DataType(enum.Enum):
     LINE = 0,
-    MSG = 1
+    MSG = 1,
 
 
 class Data(common.message.Message):
@@ -25,15 +25,17 @@ def execute(msg, comm):
     )
 
     for line in proc.stdout:
-        line_str = line.decode('utf-8')
+        line_str = line.decode('utf-8').strip('\n')
 
-        Data(DataType.LINE, line_str).send_just(comm)
+        Data(DataType.LINE, line_str).send(comm)
         response = common.util.recvmsg(comm)
 
         if response is None or response.name != "master.exec.line.get":
             proc.kill()
-            return
+            return 1
 
     proc.wait()
     msg.status = proc.returncode
-    Data(DataType.MSG, msg).send_just(comm)
+    Data(DataType.MSG, msg).send(comm)
+
+    return 0

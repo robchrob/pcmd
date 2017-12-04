@@ -9,6 +9,9 @@ Commands:
     stop
     status
     exec
+    add
+    remove
+    list
 
 Options:
     --help      Show this screen
@@ -23,6 +26,10 @@ import master.start
 import master.stop
 import master.status
 import master.exec
+import master.add
+import master.remove
+import master.list
+import master.env
 
 
 class CommandType(enum.Enum):
@@ -30,6 +37,10 @@ class CommandType(enum.Enum):
     STOP = 1,
     STATUS = 2,
     EXEC = 3,
+    ADD = 4,
+    REMOVE = 5,
+    LIST = 6,
+    ENV = 7,
 
 
 def main(conf):
@@ -45,3 +56,15 @@ def main(conf):
 
     elif conf.command is CommandType.EXEC:
         return master.exec.main(master_root)
+
+    elif conf.command is CommandType.ADD:
+        return master.add.main(master_root)
+
+    elif conf.command is CommandType.REMOVE:
+        return master.remove.main(master_root)
+
+    elif conf.command is CommandType.LIST:
+        return master.list.main(master_root)
+
+    elif conf.command is CommandType.ENV:
+        return master.env.main(master_root)

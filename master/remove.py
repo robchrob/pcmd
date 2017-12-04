@@ -1,9 +1,10 @@
-"""pcmd-master-status
+"""pcmd-master-remove
 
 Usage:
-    pcmd master status  [--version] [--help]
-                        [--hostname=ADDR] [--port=NUM]
+    pcmd master remove  [--version] [--help]
                         [--verbose | --quiet]
+                        [--hostname=ADDR] [--port=NUM]
+                        (all | <slave_name>)
 
 Options:
     -h ADDR, --hostname=ADDR    Specify hostname of master local
@@ -18,14 +19,13 @@ Options:
 """
 
 from common.message import Message
-from common.status import Status as StatusObj
-from common.const import ModuleType
 
 
-class Status(Message):
-    def __init__(self, module_type):
-        super().__init__("master.message.status")
-        self.statusFull = StatusObj(module_type)
+class Remove(Message):
+    def __init__(self, remove_all=False, slave_name=None):
+        super().__init__("master.message.remove")
+        self.slave_name = slave_name
+        self.remove_all = remove_all
 
 
 def main(master_root):
@@ -52,14 +52,29 @@ def main(master_root):
         else:
             port = int(master_root.conf.get('local_port'))
 
-    msg = Status(ModuleType.MASTER)
-    response = msg.send_get(master_root.conf.get('local_hostname'), port)
-
-    if response.status == 0:
-        master_root.logger.info(response.statusFull)
+    if master_root.conf.get_arg('all'):
+        msg = Remove(
+            True,
+            None,
+        )
     else:
-        master_root.logger.error(
-            'getting status of the pcmd.master failed - err (%s)', msg.status
+        msg = Remove(
+            False,
+            master_root.conf.get_arg('<slave_name>'),
+        )
+
+    response = msg.send_get(
+        master_root.conf.get('local_hostname'),
+        port
+    )
+
+    if response.status != 0:
+        raise response.err
+    else:
+        master_root.logger.info(
+            'slave {} removed'.format(
+                response.slave_name,
+            )
         )
 
     return response.status

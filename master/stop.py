@@ -1,7 +1,7 @@
 """pcmd-master-stop
 
 Usage:
-    pcmd master stop    [--version] [--shelp]
+    pcmd master stop    [--version] [--help]
                         [--hostname=ADDR] [--port=NUM]
                         [--verbose | --quiet]
 
@@ -33,7 +33,7 @@ def main(master_root):
        ):
         if not master_root.pidFile.running():
             master_root.logger.error(
-                'pcmd master is not currently running'
+                'pcmd.master is not currently running'
             )
             return 1
         else:
@@ -50,11 +50,15 @@ def main(master_root):
             port = int(master_root.conf.get('local_port'))
 
     msg = Stop()
-    response = msg.send(master_root.conf.get('local_hostname'), port)
+    response = msg.send_get(master_root.conf.get('local_hostname'), port)
 
     if response.status != 0:
         master_root.logger.error(
             'stopping the pcmd.master failed - err (%s)', msg.status
         )
+    else:
+        master_root.logger.debug(
+            'stopping the pcmd.master'
+        )
 
-    return msg.status
+    return response.status
