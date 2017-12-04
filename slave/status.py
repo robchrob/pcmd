@@ -19,6 +19,7 @@ Options:
 from common.const import ModuleType
 from common.message import Message
 from common.status import Status as StatusObj
+import common.connection
 
 
 class Status(Message):
@@ -28,33 +29,26 @@ class Status(Message):
 
 
 def main(slave_root):
-    if not slave_root.pidFile.running():
+    try:
+        host, port = common.connection.get(slave_root)
+    except common.connection.NotCurrentlyRunning:
         slave_root.logger.error(
-            'pcmd.slave is not currently running'
+            'pcmd.slave is not running'
+        )
+        return 1
+    except common.connection.PortNotValid:
+        slave_root.logger.error(
+            'cannot determine port for pcmd.slave'
         )
         return 1
 
-    if slave_root.conf.get('local_port') == "random":
-        if slave_root.conf.get('local_hostname') in ("127.0.0.1", "localhost"):
-            (_, port) = slave_root.pidFile.read()
-        else:
-            slave_root.logger.error(
-                "cannot determine port for {}".format(
-                    slave_root.conf.get('local_hostname')
-                )
-            )
-            return 1
-    else:
-        port = int(slave_root.conf.get('local_port'))
-
-    msg = Status(ModuleType.SLAVE)
-    response = msg.send_get(slave_root.conf.get('local_hostname'), port)
+    response = Status(ModuleType.SLAVE).send_get(host, port)
 
     if response.status == 0:
         slave_root.logger.info(response.statusFull)
     else:
         slave_root.logger.error(
-            'getting status of the pcmd.slave failed - err (%s)', msg.status
+            'getting status of the pcmd.slave failed'
         )
 
     return response.status

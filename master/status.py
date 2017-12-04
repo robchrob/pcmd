@@ -20,6 +20,7 @@ Options:
 from common.message import Message
 from common.status import Status as StatusObj
 from common.const import ModuleType
+import common.connection
 
 
 class Status(Message):
@@ -29,37 +30,27 @@ class Status(Message):
 
 
 def main(master_root):
-    if (
-            master_root.conf.get('local_hostname') in
-            ("127.0.0.1", "localhost") or
-            master_root.local
-    ):
-        if not master_root.pidFile.running():
-            master_root.logger.error(
-                'pcmd master is not currently running'
-            )
-            return 1
-        else:
-            (_, port) = master_root.pidFile.read()
-    else:
-        if master_root.conf.get('local_port') == "random":
-            master_root.logger.error(
-                "cannot determine port for {}".format(
-                    master_root.conf.get('local_hostname')
-                )
-            )
-            return 1
-        else:
-            port = int(master_root.conf.get('local_port'))
+    try:
+        host, port = common.connection.get(master_root)
+    except common.connection.NotCurrentlyRunning:
+        master_root.logger.error(
+            'pcmd.master is not running'
+        )
+        return 1
+    except common.connection.PortNotValid:
+        master_root.logger.error(
+            'cannot determine port for pcmd.master'
+        )
+        return 1
 
     msg = Status(ModuleType.MASTER)
-    response = msg.send_get(master_root.conf.get('local_hostname'), port)
+    response = msg.send_get(host, port)
 
     if response.status == 0:
         master_root.logger.info(response.statusFull)
     else:
         master_root.logger.error(
-            'getting status of the pcmd.master failed - err (%s)', msg.status
+            'getting status of the pcmd.master failed'
         )
 
     return response.status

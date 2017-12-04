@@ -54,7 +54,7 @@ class Master:
     def local_handler(self, communication, address):
         request_obj = common.util.recvmsg(communication)
 
-        self.logger.debug(
+        self.logger.info(
             'master.localServer received {} from {}'.format(
                 request_obj.name,
                 address
@@ -135,10 +135,7 @@ class Master:
                 )
                 request_obj.env_val = env_val
                 request_obj.status = 0
-            except EnvNotFound as e:
-                request_obj.err = e
-                request_obj.status = 1
-            except SlaveNotFound as e:
+            except (EnvNotFound, SlaveNotFound) as e:
                 request_obj.err = e
                 request_obj.status = 1
 

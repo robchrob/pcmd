@@ -18,6 +18,7 @@ Options:
 """
 
 from common.message import Message
+import common.connection
 
 
 class Stop(Message):
@@ -26,39 +27,28 @@ class Stop(Message):
 
 
 def main(master_root):
-    if (
-            master_root.conf.get('local_hostname') in
-            ("127.0.0.1", "localhost") or
-            master_root.local
-       ):
-        if not master_root.pidFile.running():
-            master_root.logger.error(
-                'pcmd.master is not currently running'
-            )
-            return 1
-        else:
-            (_, port) = master_root.pidFile.read()
-    else:
-        if master_root.conf.get('local_port') == "random":
-            master_root.logger.error(
-                "cannot determine port for {}".format(
-                    master_root.conf.get('local_hostname')
-                )
-            )
-            return 1
-        else:
-            port = int(master_root.conf.get('local_port'))
-
-    msg = Stop()
-    response = msg.send_get(master_root.conf.get('local_hostname'), port)
-
-    if response.status != 0:
+    try:
+        host, port = common.connection.get(master_root)
+    except common.connection.NotCurrentlyRunning:
         master_root.logger.error(
-            'stopping the pcmd.master failed - err (%s)', msg.status
+            'pcmd.master is not running'
         )
-    else:
+        return 1
+    except common.connection.PortNotValid:
+        master_root.logger.error(
+            'cannot determine port for pcmd.master'
+        )
+        return 1
+
+    response = Stop().send_get(host, port)
+
+    if response.status == 0:
         master_root.logger.debug(
             'stopping the pcmd.master'
+        )
+    else:
+        master_root.logger.error(
+            'stopping the pcmd.master failed'
         )
 
     return response.status

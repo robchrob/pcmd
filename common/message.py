@@ -7,17 +7,14 @@ import common.util
 
 class Message:
     def __init__(self, name):
-        if name != "":
-            self.name = name
-        else:
-            self.name = "master.message"
-
+        self.name = name
         self.err = None
         self.status = -1
 
     def send_get(self, hostname, port):
         serialized = pickle.dumps(self)
         serialized = struct.pack('>I', len(serialized)) + serialized
+
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             sock.connect((hostname, port))

@@ -30,6 +30,11 @@ import config.main
 from common.const import ModuleType
 import config.configuration
 
+# TODO ssl
+# TODO ssh auth
+# TODO black/whitelist auth
+# TODO alias
+
 
 def main(conf):
     if conf.module is ModuleType.MASTER:
@@ -49,7 +54,7 @@ if __name__ == '__main__':
         options_first=True,
     )
 
-    logger = common.logger.get_logger('pcmd', True)
+    logger = common.logger.get_logger('pcmd', False)
 
     try:
         conf_main = config.configuration.Configuration(cliArgs)
